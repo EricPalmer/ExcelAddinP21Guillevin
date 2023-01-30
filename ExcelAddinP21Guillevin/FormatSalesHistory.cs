@@ -44,15 +44,20 @@ namespace ExcelAddinP21Guillevin {
         private void ParseData(Excel.Worksheet ws, List<SalesHistoryEntry> entries) {
             SalesHistoryEntry entry = new SalesHistoryEntry();
 
+
             // Get total row count
             long rowCount = ws.UsedRange.Rows.Count + ws.UsedRange.Rows[1].Row - 1;
+
+            // Copy used range to array to process faster
+            object[,] cellsArray = ws.get_Range("A1:Z" + rowCount).Value2;
+
             string curRowText;
 
             //Loop from top to bottom
             //Search for an "E" or "C" in the P column, this is where an item detail is
             //Then go back up the excel file to fill in the rest of the details
             for (long curRow = 1; curRow < rowCount; curRow++) {
-                curRowText = Convert.ToString(ws.Cells[curRow, 16].Value2);
+                curRowText = Convert.ToString(cellsArray[curRow, 16]);
                 if (curRowText == null) {
                     curRowText = "";
                 }
@@ -61,13 +66,13 @@ namespace ExcelAddinP21Guillevin {
                 if (curRowText == "E" || curRowText == "C") {
                     // If the row above contains a part number, grab it
                     // Otherwise, use the previous part number found
-                    curRowText = Convert.ToString(ws.Cells[curRow -1, 1].Value2);
+                    curRowText = Convert.ToString(cellsArray[curRow -1, 1]);
                     if (curRowText == null) {
                         curRowText = "";
                     }
                     if (!(curRowText == "")) {
-                        entry.partNumber = Convert.ToString(ws.Cells[curRow - 1, 1].Value2).Trim();
-                        entry.partDesc = Convert.ToString(ws.Cells[curRow - 1, 3].Value2).Trim();
+                        entry.partNumber = Convert.ToString(cellsArray[curRow - 1, 1]).Trim();
+                        entry.partDesc = Convert.ToString(cellsArray[curRow - 1, 3]).Trim();
                     }
 
                     entry.quantity = ws.Cells[curRow, 15].Value2;
@@ -78,17 +83,17 @@ namespace ExcelAddinP21Guillevin {
                     entry.totalPrice = ws.Cells[curRow, 17].Value2;
                     entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
 
-                    GetCustomerInfo(ws, curRow, ref entry.customerName, ref entry.customerPostalCode);
-                    GetInvoiceDate(ws, curRow, ref entry.invoiceDate);
-                    GetSalesLocation(ws, curRow, ref entry.branchName, ref entry.branchNum);
-                    GetSalesRep(ws, curRow, ref entry.salesRep);
+                    GetCustomerInfo(cellsArray, curRow, ref entry.customerName, ref entry.customerPostalCode);
+                    GetInvoiceDate(cellsArray, curRow, ref entry.invoiceDate);
+                    GetSalesLocation(cellsArray, curRow, ref entry.branchName, ref entry.branchNum);
+                    GetSalesRep(cellsArray, curRow, ref entry.salesRep);
 
                     entries.Add(entry);
                 }
             }
         }
 
-        private void GetCustomerInfo(Excel.Worksheet ws, long curRow, ref string customerName, ref string customerPostalCode) {
+        private void GetCustomerInfo(object[,] cellsArray, long curRow, ref string customerName, ref string customerPostalCode) {
             string inputText;
             int startIndex;
             int endIndex;
@@ -101,7 +106,7 @@ namespace ExcelAddinP21Guillevin {
                     throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
                 }
 
-                inputText = Convert.ToString(ws.Cells[curRow, 1].Value2);
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
                 if (inputText == null) {
                     inputText = "";
                 }
@@ -118,7 +123,7 @@ namespace ExcelAddinP21Guillevin {
             customerPostalCode = inputText.Substring(startIndex).Trim();
         }
 
-        private void GetInvoiceDate(Excel.Worksheet ws, long curRow, ref string invoiceDate) {
+        private void GetInvoiceDate(object[,] cellsArray, long curRow, ref string invoiceDate) {
             string inputText;
             int startIndex;
 
@@ -130,7 +135,7 @@ namespace ExcelAddinP21Guillevin {
                     throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
                 }
 
-                inputText = Convert.ToString(ws.Cells[curRow, 1].Value2);
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
                 if (inputText == null) {
                     inputText = "";
                 }
@@ -142,7 +147,7 @@ namespace ExcelAddinP21Guillevin {
             invoiceDate = inputText.Substring(startIndex).Trim();
         }
 
-        private void GetSalesLocation(Excel.Worksheet ws, long curRow, ref string branchName, ref string branchNum) {
+        private void GetSalesLocation(object[,] cellsArray, long curRow, ref string branchName, ref string branchNum) {
             string inputText;
             int startIndex;
             int endIndex;
@@ -156,7 +161,7 @@ namespace ExcelAddinP21Guillevin {
                     throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
                 }
 
-                inputText = Convert.ToString(ws.Cells[curRow, 1].Value2);
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
                 if (inputText == null) {
                     inputText = "";
                 }
@@ -174,7 +179,7 @@ namespace ExcelAddinP21Guillevin {
             branchNum = inputText.Substring(startIndex, endIndex - startIndex).Trim();
         }
 
-        private void GetSalesRep(Excel.Worksheet ws, long curRow, ref string salesRep) {
+        private void GetSalesRep(object[,] cellsArray, long curRow, ref string salesRep) {
             string inputText;
             int startIndex;
 
@@ -186,7 +191,7 @@ namespace ExcelAddinP21Guillevin {
                     throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
                 }
 
-                inputText = Convert.ToString(ws.Cells[curRow, 1].Value2);
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
                 if (inputText == null) {
                     inputText = "";
                 }
