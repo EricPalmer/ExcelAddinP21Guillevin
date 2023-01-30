@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace ExcelAddinP21Guillevin {
     public class FormatSalesHistory {
@@ -24,16 +25,25 @@ namespace ExcelAddinP21Guillevin {
             public double totalPrice;
             public double unitPrice;
         }
-        public FormatSalesHistory(Excel.Worksheet DataWs)
+
+        List<SalesHistoryEntry> entries;
+
+        public FormatSalesHistory() { 
+        
+        }
+        public void Format(Excel.Worksheet DataWs, BackgroundWorker backgroundWorker)
         {
             try {
                 // Get all entries from given worksheet
-                List<SalesHistoryEntry> entries = new List<SalesHistoryEntry>();
-                ParseData(DataWs, entries);
+                entries = new List<SalesHistoryEntry>();
 
-                // Create new worksheet 
-                Excel.Worksheet formattedWs = Globals.ThisAddIn.Application.ActiveWorkbook.Worksheets.Add(After: DataWs);
-                FormatWorksheet(formattedWs, entries);
+                // Get total row count
+                long rowCount = DataWs.UsedRange.Rows.Count + DataWs.UsedRange.Rows[1].Row - 1;
+
+                // Copy used range to an array to process faster
+                object[,] cellsArray = DataWs.get_Range("A1:Z" + rowCount).Value2;
+
+                ParseData(cellsArray, rowCount, entries, backgroundWorker);
             }
             catch (Exception ex) {
                 MessageBox.Show(ex.Message);
@@ -41,27 +51,22 @@ namespace ExcelAddinP21Guillevin {
             }
         }
 
-        private void ParseData(Excel.Worksheet ws, List<SalesHistoryEntry> entries) {
+        private void ParseData(object[,] cellsArray, long rowCount, List<SalesHistoryEntry> entries, BackgroundWorker backgroundWorker) {
             SalesHistoryEntry entry = new SalesHistoryEntry();
-
-
-            // Get total row count
-            long rowCount = ws.UsedRange.Rows.Count + ws.UsedRange.Rows[1].Row - 1;
-
-            // Copy used range to array to process faster
-            object[,] cellsArray = ws.get_Range("A1:Z" + rowCount).Value2;
-
-            string curRowText;
 
             //Loop from top to bottom
             //Search for an "E" or "C" in the P column, this is where an item detail is
             //Then go back up the excel file to fill in the rest of the details
+            string curRowText;
             for (long curRow = 1; curRow < rowCount; curRow++) {
+                // Update progress bar
+                int progressPercentage = (int)((curRow + 1) * 100 / rowCount);
+                backgroundWorker.ReportProgress(progressPercentage);
+
                 curRowText = Convert.ToString(cellsArray[curRow, 16]);
                 if (curRowText == null) {
                     curRowText = "";
                 }
-
 
                 if (curRowText == "E" || curRowText == "C") {
                     // If the row above contains a part number, grab it
@@ -75,12 +80,12 @@ namespace ExcelAddinP21Guillevin {
                         entry.partDesc = Convert.ToString(cellsArray[curRow - 1, 3]).Trim();
                     }
 
-                    entry.quantity = ws.Cells[curRow, 15].Value2;
+                    entry.quantity = (double)cellsArray[curRow, 15];
 
-                    entry.totalCost = ws.Cells[curRow, 18].Value2;
+                    entry.totalCost = (double)cellsArray[curRow, 18];
                     entry.unitCost = Math.Abs(entry.totalCost) / entry.quantity;
 
-                    entry.totalPrice = ws.Cells[curRow, 17].Value2;
+                    entry.totalPrice = (double)cellsArray[curRow, 17];
                     entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
 
                     GetCustomerInfo(cellsArray, curRow, ref entry.customerName, ref entry.customerPostalCode);
@@ -203,56 +208,63 @@ namespace ExcelAddinP21Guillevin {
             salesRep = inputText.Substring(startIndex).Trim();
         }
 
-        private void FormatWorksheet(Excel.Worksheet ws, List<SalesHistoryEntry> entries) {
-            ws.Select();
+        public void FormatWorksheet(Excel.Worksheet DataWs) {
+            // Create new worksheet for data to be placed on
+            Excel.Worksheet formattedWs = Globals.ThisAddIn.Application.ActiveWorkbook.Worksheets.Add(After: DataWs);
 
-            ws.Cells[1, 1] = "Branch Num";
-            ws.Cells[1, 2] = "Branch Name";
-            ws.Cells[1, 3] = "Sales Rep";
-            ws.Cells[1, 4] = "Invoice Date";
-            ws.Cells[1, 5] = "Customer";
-            ws.Cells[1, 6] = "Customer Postal Code";
-            ws.Cells[1, 7] = "Part Number";
-            ws.Cells[1, 8] = "Part Description";
-            ws.Cells[1, 9] = "Qty";
-            ws.Cells[1, 10] = "Total Cost";
-            ws.Cells[1, 11] = "Unit Cost";
-            ws.Cells[1, 12] = "Total Price";
-            ws.Cells[1, 13] = "Unit Price";
+            // Put data into an array that will be copied in one go into the excel worksheet
+            object[,] OutputArray = new object[entries.Count + 1, 13];
 
-            // Bold the headers
-            ws.Range["A1:M1"].Font.Bold = true;
-
-            // Freeze the top row
-            ws.Application.ActiveWindow.SplitRow = 1;
-            ws.Application.ActiveWindow.FreezePanes = true;
+            OutputArray[0, 0] = "Branch Num";
+            OutputArray[0, 1] = "Branch Name";
+            OutputArray[0, 2] = "Sales Rep";
+            OutputArray[0, 3] = "Invoice Date";
+            OutputArray[0, 4] = "Customer";
+            OutputArray[0, 5] = "Customer Postal Code";
+            OutputArray[0, 6] = "Part Number";
+            OutputArray[0, 7] = "Part Description";
+            OutputArray[0, 8] = "Qty";
+            OutputArray[0, 9] = "Total Cost";
+            OutputArray[0, 10] = "Unit Cost";
+            OutputArray[0, 11] = "Total Price";
+            OutputArray[0, 12] = "Unit Price";
 
             // Add each entry to a new line on the sheet
-            long curRow = 2;
+            long curRow = 1;
             foreach (SalesHistoryEntry entry in entries) {
-                ws.Cells[curRow, 1] = entry.branchNum;
-                ws.Cells[curRow, 2] = entry.branchName;
-                ws.Cells[curRow, 3] = entry.salesRep;
-                ws.Cells[curRow, 4] = entry.invoiceDate;
-                ws.Cells[curRow, 5] = entry.customerName;
-                ws.Cells[curRow, 6] = entry.customerPostalCode;
-                ws.Cells[curRow, 7] = entry.partNumber;
-                ws.Cells[curRow, 8] = entry.partDesc;
-                ws.Cells[curRow, 9] = entry.quantity;
-                ws.Cells[curRow, 10] = entry.totalCost;
-                ws.Cells[curRow, 10].NumberFormat = "$#,##0.00";
-                ws.Cells[curRow, 11] = entry.unitCost;
-                ws.Cells[curRow, 11].Numberformat = "$0.00";
-                ws.Cells[curRow, 12] = entry.totalPrice;
-                ws.Cells[curRow, 12].Numberformat = "$0.00";
-                ws.Cells[curRow, 13] = entry.unitPrice;
-                ws.Cells[curRow, 13].Numberformat = "$0.00";
+                OutputArray[curRow, 0] = entry.branchNum;
+                OutputArray[curRow, 1] = entry.branchName;
+                OutputArray[curRow, 2] = entry.salesRep;
+                OutputArray[curRow, 3] = entry.invoiceDate;
+                OutputArray[curRow, 4] = entry.customerName;
+                OutputArray[curRow, 5] = entry.customerPostalCode;
+                OutputArray[curRow, 6] = entry.partNumber;
+                OutputArray[curRow, 7] = entry.partDesc;
+                OutputArray[curRow, 8] = entry.quantity;
+                OutputArray[curRow, 9] = entry.totalCost;
+                OutputArray[curRow, 10] = entry.unitCost;
+                OutputArray[curRow, 11] = entry.totalPrice;
+                OutputArray[curRow, 12] = entry.unitPrice;
 
                 curRow++;
             }
 
+            // Copy the array contents onto the newly created worksheet
+            formattedWs.Select();
+            formattedWs.Range["A1", formattedWs.Cells[entries.Count, 13]] = OutputArray;
+
+            // Bold the headers
+            formattedWs.Range["A1:M1"].Font.Bold = true;
+
+            // Freeze the top row
+            formattedWs.Application.ActiveWindow.SplitRow = 1;
+            formattedWs.Application.ActiveWindow.FreezePanes = true;
+
+            // Format the currency cells
+            formattedWs.Range["J2", formattedWs.Cells[entries.Count, 13]].Numberformat = "$0.00";
+
             // Resize columns
-            ws.UsedRange.Columns.AutoFit();
+            formattedWs.UsedRange.Columns.AutoFit();
         }
     }
 }
