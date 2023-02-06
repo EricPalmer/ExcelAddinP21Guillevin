@@ -31,7 +31,7 @@ namespace ExcelAddinP21Guillevin {
         public FormatSalesHistory() { 
         
         }
-        public void Format(Excel.Worksheet DataWs, BackgroundWorker backgroundWorker)
+        public void Parse(Excel.Worksheet DataWs, BackgroundWorker backgroundWorker)
         {
             try {
                 // Get all entries from given worksheet
@@ -158,7 +158,6 @@ namespace ExcelAddinP21Guillevin {
             int endIndex;
 
             // Loop back up until a cell is found that starts with "Sales Location : "
-
             do {
                 curRow--;
 
@@ -174,9 +173,18 @@ namespace ExcelAddinP21Guillevin {
             while (!(inputText.Substring(0, inputText.Length > 17 ? 17 : inputText.Length) == "Sales Location : "));
 
             // Extract branch name
-            startIndex = inputText.IndexOf('(') + 1;
+            // First just grab everything after the '-'
+            startIndex = inputText.IndexOf('-');
+            branchName = inputText.Substring(startIndex);
+
+            // Then check if there are '( )' in the line, if there are update the name with what is between them
+            startIndex = inputText.IndexOf('(');
             endIndex = inputText.LastIndexOf(')');
-            branchName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+
+            if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
+                startIndex++;
+                branchName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+            }
 
             // Extract branch num
             startIndex = inputText.IndexOf(':') + 1;

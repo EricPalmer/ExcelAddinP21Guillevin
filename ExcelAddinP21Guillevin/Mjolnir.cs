@@ -34,7 +34,7 @@ namespace ExcelAddinP21Guillevin {
         }
 
         public void Run(Excel.Worksheet wsCur) {
-            //try {
+            try {
                 // First, check if we are on a mjolnir page
                 // If not, exit
                 if (!(Convert.ToString(wsCur.Cells[1, 1].Value2) == "Product Name")) {
@@ -48,16 +48,11 @@ namespace ExcelAddinP21Guillevin {
 
                 // Paste products one by one in P21
                 WriteData(products);
-            /*}
+            }
             catch (Exception ex) {
                 MessageBox.Show(ex.Message);
                 return;
             }
-            
-            {
-                MessageBox.Show("There was an error");
-                return;
-            }*/
         }            
 
         private void ParseData(Excel.Worksheet ws, List<product> products) { 
@@ -101,21 +96,21 @@ namespace ExcelAddinP21Guillevin {
 
         private void WriteData(List<product> products) {
             // Let the user know that they will have 5 seconds to make it to P21
-            DialogResult result = MessageBox.Show("Once you click OK you will have 5 seconds to navigate to the lightning bolt", "Mjölnir", MessageBoxButtons.OKCancel);
+            DialogResult result = MessageBox.Show("Once you click OK you will have 7 seconds to navigate to the lightning bolt", "Mjölnir", MessageBoxButtons.OKCancel);
             if (result == DialogResult.OK) {
-                System.Threading.Thread.Sleep(5000);
+                System.Threading.Thread.Sleep(7000);
 
                 // Paste the product name and quantity, hitting enter after each one to fill in the P21 order entry
                 foreach (product product in products) {
                     SendKeys.Send(product.productName);
-                    System.Threading.Thread.Sleep(100);
-                    SendKeys.Send("{ENTER}");
-                    System.Threading.Thread.Sleep(100);
-
-                    SendKeys.Send(product.quantity);
-                    System.Threading.Thread.Sleep(100);
+                    System.Threading.Thread.Sleep(500);
                     SendKeys.Send("{ENTER}");
                     System.Threading.Thread.Sleep(500);
+
+                    SendKeys.Send(product.quantity);
+                    System.Threading.Thread.Sleep(500);
+                    SendKeys.Send("{ENTER}");
+                    System.Threading.Thread.Sleep(1000);
                 }
             }
             else {

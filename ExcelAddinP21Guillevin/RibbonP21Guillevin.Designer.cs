@@ -35,55 +35,55 @@ namespace ExcelAddinP21Guillevin {
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RibbonP21Guillevin));
             this.tab1 = this.Factory.CreateRibbonTab();
-            this.group2 = this.Factory.CreateRibbonGroup();
-            this.group1 = this.Factory.CreateRibbonGroup();
-            this.group3 = this.Factory.CreateRibbonGroup();
-            this.group4 = this.Factory.CreateRibbonGroup();
+            this.groupGuillevin = this.Factory.CreateRibbonGroup();
+            this.groupSalesHistory = this.Factory.CreateRibbonGroup();
+            this.groupMjolnir = this.Factory.CreateRibbonGroup();
+            this.groupHelp = this.Factory.CreateRibbonGroup();
             this.button1 = this.Factory.CreateRibbonButton();
             this.buttonFormatSalesHistory = this.Factory.CreateRibbonButton();
             this.btnMjolnirNewPage = this.Factory.CreateRibbonButton();
             this.btnMjolnirRun = this.Factory.CreateRibbonButton();
             this.btnHelp = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
-            this.group2.SuspendLayout();
-            this.group1.SuspendLayout();
-            this.group3.SuspendLayout();
-            this.group4.SuspendLayout();
+            this.groupGuillevin.SuspendLayout();
+            this.groupSalesHistory.SuspendLayout();
+            this.groupMjolnir.SuspendLayout();
+            this.groupHelp.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
             // 
             this.tab1.ControlId.ControlIdType = Microsoft.Office.Tools.Ribbon.RibbonControlIdType.Office;
-            this.tab1.Groups.Add(this.group2);
-            this.tab1.Groups.Add(this.group1);
-            this.tab1.Groups.Add(this.group3);
-            this.tab1.Groups.Add(this.group4);
+            this.tab1.Groups.Add(this.groupGuillevin);
+            this.tab1.Groups.Add(this.groupSalesHistory);
+            this.tab1.Groups.Add(this.groupMjolnir);
+            this.tab1.Groups.Add(this.groupHelp);
             this.tab1.Label = "Guillevin - P21";
             this.tab1.Name = "tab1";
             // 
-            // group2
+            // groupGuillevin
             // 
-            this.group2.Items.Add(this.button1);
-            this.group2.Label = "ver 0.3";
-            this.group2.Name = "group2";
+            this.groupGuillevin.Items.Add(this.button1);
+            this.groupGuillevin.Label = "ver 0.4";
+            this.groupGuillevin.Name = "groupGuillevin";
             // 
-            // group1
+            // groupSalesHistory
             // 
-            this.group1.Items.Add(this.buttonFormatSalesHistory);
-            this.group1.Label = "Sales History";
-            this.group1.Name = "group1";
+            this.groupSalesHistory.Items.Add(this.buttonFormatSalesHistory);
+            this.groupSalesHistory.Label = "Sales History";
+            this.groupSalesHistory.Name = "groupSalesHistory";
             // 
-            // group3
+            // groupMjolnir
             // 
-            this.group3.Items.Add(this.btnMjolnirNewPage);
-            this.group3.Items.Add(this.btnMjolnirRun);
-            this.group3.Label = "Mjölnir";
-            this.group3.Name = "group3";
+            this.groupMjolnir.Items.Add(this.btnMjolnirNewPage);
+            this.groupMjolnir.Items.Add(this.btnMjolnirRun);
+            this.groupMjolnir.Label = "Mjölnir";
+            this.groupMjolnir.Name = "groupMjolnir";
             // 
-            // group4
+            // groupHelp
             // 
-            this.group4.Items.Add(this.btnHelp);
-            this.group4.Name = "group4";
+            this.groupHelp.Items.Add(this.btnHelp);
+            this.groupHelp.Name = "groupHelp";
             // 
             // button1
             // 
@@ -137,14 +137,14 @@ namespace ExcelAddinP21Guillevin {
             this.Load += new Microsoft.Office.Tools.Ribbon.RibbonUIEventHandler(this.RibbonP21Guillevin_Load);
             this.tab1.ResumeLayout(false);
             this.tab1.PerformLayout();
-            this.group2.ResumeLayout(false);
-            this.group2.PerformLayout();
-            this.group1.ResumeLayout(false);
-            this.group1.PerformLayout();
-            this.group3.ResumeLayout(false);
-            this.group3.PerformLayout();
-            this.group4.ResumeLayout(false);
-            this.group4.PerformLayout();
+            this.groupGuillevin.ResumeLayout(false);
+            this.groupGuillevin.PerformLayout();
+            this.groupSalesHistory.ResumeLayout(false);
+            this.groupSalesHistory.PerformLayout();
+            this.groupMjolnir.ResumeLayout(false);
+            this.groupMjolnir.PerformLayout();
+            this.groupHelp.ResumeLayout(false);
+            this.groupHelp.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -152,13 +152,13 @@ namespace ExcelAddinP21Guillevin {
         #endregion
 
         internal Microsoft.Office.Tools.Ribbon.RibbonTab tab1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonGroup group1;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupSalesHistory;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton buttonFormatSalesHistory;
-        internal Microsoft.Office.Tools.Ribbon.RibbonGroup group2;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupGuillevin;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonGroup group3;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupMjolnir;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMjolnirNewPage;
-        internal Microsoft.Office.Tools.Ribbon.RibbonGroup group4;
+        internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupHelp;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnHelp;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMjolnirRun;
     }
