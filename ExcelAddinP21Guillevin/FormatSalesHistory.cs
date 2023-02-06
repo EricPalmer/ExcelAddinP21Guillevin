@@ -27,74 +27,71 @@ namespace ExcelAddinP21Guillevin {
         }
 
         List<SalesHistoryEntry> entries;
+        object[,] cellsArray;
+        long rowCount;
 
-        public FormatSalesHistory() { 
-        
+        public FormatSalesHistory(Excel.Worksheet DataWs) {
+            // Get all entries from given worksheet
+            entries = new List<SalesHistoryEntry>();
+
+            // Get total row count
+            rowCount = DataWs.UsedRange.Rows.Count + DataWs.UsedRange.Rows[1].Row - 1;
+
+            // Copy used range to an array to process faster
+            cellsArray = DataWs.get_Range("A1:Z" + rowCount).Value2;
+
         }
-        public void Parse(Excel.Worksheet DataWs, BackgroundWorker backgroundWorker)
-        {
+
+        public void Parse(BackgroundWorker backgroundWorker) {
             try {
-                // Get all entries from given worksheet
-                entries = new List<SalesHistoryEntry>();
+                SalesHistoryEntry entry = new SalesHistoryEntry();
 
-                // Get total row count
-                long rowCount = DataWs.UsedRange.Rows.Count + DataWs.UsedRange.Rows[1].Row - 1;
+                //Loop from top to bottom
+                //Search for an "E" or "C" in the P column, this is where an item detail is
+                //Then go back up the excel file to fill in the rest of the details
+                string curRowText;
+                for (long curRow = 1; curRow < rowCount; curRow++) {
+                    // Update progress bar
+                    int progressPercentage = (int)((curRow + 1) * 100 / rowCount);
+                    backgroundWorker.ReportProgress(progressPercentage);
 
-                // Copy used range to an array to process faster
-                object[,] cellsArray = DataWs.get_Range("A1:Z" + rowCount).Value2;
+                    curRowText = Convert.ToString(cellsArray[curRow, 16]);
+                    if (curRowText == null) {
+                        curRowText = "";
+                    }
 
-                ParseData(cellsArray, rowCount, entries, backgroundWorker);
+                    if (curRowText == "E" || curRowText == "C") {
+                        // If the row above contains a part number, grab it
+                        // Otherwise, use the previous part number found
+                        curRowText = Convert.ToString(cellsArray[curRow -1, 1]);
+                        if (curRowText == null) {
+                            curRowText = "";
+                        }
+                        if (!(curRowText == "")) {
+                            entry.partNumber = Convert.ToString(cellsArray[curRow - 1, 1]).Trim();
+                            entry.partDesc = Convert.ToString(cellsArray[curRow - 1, 3]).Trim();
+                        }
+
+                        entry.quantity = (double)cellsArray[curRow, 15];
+
+                        entry.totalCost = (double)cellsArray[curRow, 18];
+                        entry.unitCost = Math.Abs(entry.totalCost) / entry.quantity;
+
+                        entry.totalPrice = (double)cellsArray[curRow, 17];
+                        entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
+
+                        GetCustomerInfo(cellsArray, curRow, ref entry.customerName, ref entry.customerPostalCode);
+                        GetInvoiceDate(cellsArray, curRow, ref entry.invoiceDate);
+                        GetSalesLocation(cellsArray, curRow, ref entry.branchName, ref entry.branchNum);
+                        GetSalesRep(cellsArray, curRow, ref entry.salesRep);
+
+                        entries.Add(entry);
+                    }
+                }
             }
             catch (Exception ex) {
                 MessageBox.Show(ex.Message);
                 return;
-            }
-        }
-
-        private void ParseData(object[,] cellsArray, long rowCount, List<SalesHistoryEntry> entries, BackgroundWorker backgroundWorker) {
-            SalesHistoryEntry entry = new SalesHistoryEntry();
-
-            //Loop from top to bottom
-            //Search for an "E" or "C" in the P column, this is where an item detail is
-            //Then go back up the excel file to fill in the rest of the details
-            string curRowText;
-            for (long curRow = 1; curRow < rowCount; curRow++) {
-                // Update progress bar
-                int progressPercentage = (int)((curRow + 1) * 100 / rowCount);
-                backgroundWorker.ReportProgress(progressPercentage);
-
-                curRowText = Convert.ToString(cellsArray[curRow, 16]);
-                if (curRowText == null) {
-                    curRowText = "";
-                }
-
-                if (curRowText == "E" || curRowText == "C") {
-                    // If the row above contains a part number, grab it
-                    // Otherwise, use the previous part number found
-                    curRowText = Convert.ToString(cellsArray[curRow -1, 1]);
-                    if (curRowText == null) {
-                        curRowText = "";
-                    }
-                    if (!(curRowText == "")) {
-                        entry.partNumber = Convert.ToString(cellsArray[curRow - 1, 1]).Trim();
-                        entry.partDesc = Convert.ToString(cellsArray[curRow - 1, 3]).Trim();
-                    }
-
-                    entry.quantity = (double)cellsArray[curRow, 15];
-
-                    entry.totalCost = (double)cellsArray[curRow, 18];
-                    entry.unitCost = Math.Abs(entry.totalCost) / entry.quantity;
-
-                    entry.totalPrice = (double)cellsArray[curRow, 17];
-                    entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
-
-                    GetCustomerInfo(cellsArray, curRow, ref entry.customerName, ref entry.customerPostalCode);
-                    GetInvoiceDate(cellsArray, curRow, ref entry.invoiceDate);
-                    GetSalesLocation(cellsArray, curRow, ref entry.branchName, ref entry.branchNum);
-                    GetSalesRep(cellsArray, curRow, ref entry.salesRep);
-
-                    entries.Add(entry);
-                }
             }
         }
 

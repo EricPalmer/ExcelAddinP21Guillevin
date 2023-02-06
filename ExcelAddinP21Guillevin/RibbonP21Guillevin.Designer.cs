@@ -39,7 +39,6 @@ namespace ExcelAddinP21Guillevin {
             this.groupSalesHistory = this.Factory.CreateRibbonGroup();
             this.groupMjolnir = this.Factory.CreateRibbonGroup();
             this.groupHelp = this.Factory.CreateRibbonGroup();
-            this.label1 = this.Factory.CreateRibbonLabel();
             this.button1 = this.Factory.CreateRibbonButton();
             this.buttonFormatSalesHistory = this.Factory.CreateRibbonButton();
             this.btnMjolnirNewPage = this.Factory.CreateRibbonButton();
@@ -83,14 +82,8 @@ namespace ExcelAddinP21Guillevin {
             // 
             // groupHelp
             // 
-            this.groupHelp.Items.Add(this.label1);
             this.groupHelp.Items.Add(this.btnHelp);
             this.groupHelp.Name = "groupHelp";
-            // 
-            // label1
-            // 
-            this.label1.Label = "test 2";
-            this.label1.Name = "label1";
             // 
             // button1
             // 
@@ -168,7 +161,6 @@ namespace ExcelAddinP21Guillevin {
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup groupHelp;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnHelp;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnMjolnirRun;
-        internal Microsoft.Office.Tools.Ribbon.RibbonLabel label1;
     }
 
     partial class ThisRibbonCollection {

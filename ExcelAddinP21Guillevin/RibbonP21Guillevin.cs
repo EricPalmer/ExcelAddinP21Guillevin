@@ -33,13 +33,10 @@ namespace ExcelAddinP21Guillevin {
         private void buttonFormatSalesHistory_Click(object sender, RibbonControlEventArgs e)
         {
             // Check if this is a valid sales history page
-            //if (Globals.ThisAddIn.Application.ActiveSheet.Cells[1,2].Value2 != "Detailed Sales History Report") {
-            //    MessageBox.Show("This is not a valid sales history report sheet.");
-            //    return;
-            //}
-
-            // Create FormatSalesHistory object to use in background task
-            formatSalesHistory = new FormatSalesHistory();
+            if (Globals.ThisAddIn.Application.ActiveSheet.Cells[1,2].Value2 != "Detailed Sales History Report") {
+                MessageBox.Show("This is not a valid sales history report sheet.");
+                return;
+            }
 
             frmLoadingForm = new LoadingForm();
 
@@ -55,8 +52,14 @@ namespace ExcelAddinP21Guillevin {
         }
 
         private void FormatSalesHistory_BGWorker_DoWork(object sender, DoWorkEventArgs e) {
+            // Create FormatSalesHistory object to use in background task
+            // Need to do this because excel doesn't like it when you access it from a background worker
+            // So the constructor copies all the cells into an array for its internal functions to use instead
+
+            formatSalesHistory = new FormatSalesHistory(Globals.ThisAddIn.Application.ActiveSheet);
+
             // Parse the sales history data on the active worksheet
-            formatSalesHistory.Parse(Globals.ThisAddIn.Application.ActiveSheet, backgroundWorker);
+            formatSalesHistory.Parse(backgroundWorker);
         }
 
         private void FormatSalesHistory_BGWorker_ProgressChanged(object sender, ProgressChangedEventArgs e) {
