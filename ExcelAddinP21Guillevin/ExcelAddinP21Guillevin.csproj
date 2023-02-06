@@ -33,7 +33,7 @@
     <PublishUrl>C:\Users\eric-\source\repos\ExcelAddinP21Guillevin\Published\</PublishUrl>
     <InstallUrl>https://github.com/EricPalmer/ExcelAddinP21Guillevin/tree/master/Published/</InstallUrl>
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.15</ApplicationVersion>
+    <ApplicationVersion>1.0.0.16</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>0</UpdateInterval>
