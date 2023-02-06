@@ -31,9 +31,9 @@
     <IsWebBootstrapper>True</IsWebBootstrapper>
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <PublishUrl>C:\Users\eric-\source\repos\ExcelAddinP21Guillevin\Published\</PublishUrl>
-    <InstallUrl>https://github.com/EricPalmer/ExcelAddinP21Guillevin/blob/master/Published/</InstallUrl>
+    <InstallUrl>https://github.com/EricPalmer/ExcelAddinP21Guillevin/tree/master/Published/</InstallUrl>
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.0.12</ApplicationVersion>
+    <ApplicationVersion>1.0.0.13</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>0</UpdateInterval>
