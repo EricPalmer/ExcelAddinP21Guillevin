@@ -89,7 +89,7 @@ namespace ExcelAddinP21Guillevin {
         }
         
         private void btnHelp_Click(object sender, RibbonControlEventArgs e) {
-            Globals.ThisAddIn.taskPane.Visible = !Globals.ThisAddIn.taskPane.Visible;
+            //Globals.ThisAddIn.taskPane.Visible = !Globals.ThisAddIn.taskPane.Visible;
         }
     }
 }

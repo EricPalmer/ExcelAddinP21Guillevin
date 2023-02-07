@@ -23,12 +23,12 @@ namespace ExcelAddinP21Guillevin
 
         private void ThisAddIn_Startup(object sender, System.EventArgs e) {
             // Create a new instance of the user control
-            actionPaneHelp = new ActionPaneHelp();
+            //actionPaneHelp = new ActionPaneHelp();
 
             // Create a new CustomTaskPane object and add the user control to it
-            actionPane = this.CustomTaskPanes.Add(actionPaneHelp, "My Action Pane");
+            //actionPane = this.CustomTaskPanes.Add(actionPaneHelp, "My Action Pane");
 
-            actionPane.Visible = true;
+            //actionPane.Visible = true;
         }
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e) {
