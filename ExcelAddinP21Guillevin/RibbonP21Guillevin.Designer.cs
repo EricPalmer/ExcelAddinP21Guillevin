@@ -36,13 +36,13 @@ namespace ExcelAddinP21Guillevin {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(RibbonP21Guillevin));
             this.tab1 = this.Factory.CreateRibbonTab();
             this.groupGuillevin = this.Factory.CreateRibbonGroup();
-            this.groupSalesHistory = this.Factory.CreateRibbonGroup();
-            this.groupMjolnir = this.Factory.CreateRibbonGroup();
-            this.groupHelp = this.Factory.CreateRibbonGroup();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.groupSalesHistory = this.Factory.CreateRibbonGroup();
             this.buttonFormatSalesHistory = this.Factory.CreateRibbonButton();
+            this.groupMjolnir = this.Factory.CreateRibbonGroup();
             this.btnMjolnirNewPage = this.Factory.CreateRibbonButton();
             this.btnMjolnirRun = this.Factory.CreateRibbonButton();
+            this.groupHelp = this.Factory.CreateRibbonGroup();
             this.btnHelp = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.groupGuillevin.SuspendLayout();
@@ -67,24 +67,6 @@ namespace ExcelAddinP21Guillevin {
             this.groupGuillevin.Label = "ver 0.4";
             this.groupGuillevin.Name = "groupGuillevin";
             // 
-            // groupSalesHistory
-            // 
-            this.groupSalesHistory.Items.Add(this.buttonFormatSalesHistory);
-            this.groupSalesHistory.Label = "Sales History";
-            this.groupSalesHistory.Name = "groupSalesHistory";
-            // 
-            // groupMjolnir
-            // 
-            this.groupMjolnir.Items.Add(this.btnMjolnirNewPage);
-            this.groupMjolnir.Items.Add(this.btnMjolnirRun);
-            this.groupMjolnir.Label = "Mjölnir";
-            this.groupMjolnir.Name = "groupMjolnir";
-            // 
-            // groupHelp
-            // 
-            this.groupHelp.Items.Add(this.btnHelp);
-            this.groupHelp.Name = "groupHelp";
-            // 
             // button1
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -92,6 +74,12 @@ namespace ExcelAddinP21Guillevin {
             this.button1.Label = " ";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
+            // 
+            // groupSalesHistory
+            // 
+            this.groupSalesHistory.Items.Add(this.buttonFormatSalesHistory);
+            this.groupSalesHistory.Label = "Sales History";
+            this.groupSalesHistory.Name = "groupSalesHistory";
             // 
             // buttonFormatSalesHistory
             // 
@@ -101,6 +89,13 @@ namespace ExcelAddinP21Guillevin {
             this.buttonFormatSalesHistory.OfficeImageId = "MorePagePartsInsert";
             this.buttonFormatSalesHistory.ShowImage = true;
             this.buttonFormatSalesHistory.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.buttonFormatSalesHistory_Click);
+            // 
+            // groupMjolnir
+            // 
+            this.groupMjolnir.Items.Add(this.btnMjolnirNewPage);
+            this.groupMjolnir.Items.Add(this.btnMjolnirRun);
+            this.groupMjolnir.Label = "Mjölnir";
+            this.groupMjolnir.Name = "groupMjolnir";
             // 
             // btnMjolnirNewPage
             // 
@@ -119,6 +114,11 @@ namespace ExcelAddinP21Guillevin {
             this.btnMjolnirRun.Name = "btnMjolnirRun";
             this.btnMjolnirRun.ShowImage = true;
             this.btnMjolnirRun.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnMjolnirRun_Click);
+            // 
+            // groupHelp
+            // 
+            this.groupHelp.Items.Add(this.btnHelp);
+            this.groupHelp.Name = "groupHelp";
             // 
             // btnHelp
             // 

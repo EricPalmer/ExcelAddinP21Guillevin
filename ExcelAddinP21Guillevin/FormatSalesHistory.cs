@@ -10,13 +10,23 @@ using System.ComponentModel;
 
 namespace ExcelAddinP21Guillevin {
     public class FormatSalesHistory {
-        struct SalesHistoryEntry {
+        // Dictionary to hold a list of all the sort levels and their associated function to extract that particular piece of data
+        Dictionary<string, Action<object[,], long, SalesHistoryEntry>> sortLevelReadFunctions;
+
+        // List of the sort levels used in the generated report
+        List<String> sortLevels;
+
+        class SalesHistoryEntry {
             public string branchNum;
             public string branchName;
             public string salesRep;
+            public string invoicePeriod;
             public string invoiceDate;
+            public string invoiceNum;
+            public string orderNum;
             public string customerName;
             public string customerPostalCode;
+            public string customerShipToNum;
             public string partNumber;
             public string partDesc;
             public double quantity;
@@ -24,6 +34,11 @@ namespace ExcelAddinP21Guillevin {
             public double unitCost;
             public double totalPrice;
             public double unitPrice;
+            public double marginPercent;
+            public string contractNum;
+            public string productGroup;
+            public string supplier;
+            public string taker;
         }
 
         List<SalesHistoryEntry> entries;
@@ -38,13 +53,64 @@ namespace ExcelAddinP21Guillevin {
             rowCount = DataWs.UsedRange.Rows.Count + DataWs.UsedRange.Rows[1].Row - 1;
 
             // Copy used range to an array to process faster
-            cellsArray = DataWs.get_Range("A1:Z" + rowCount).Value2;
-
+            cellsArray = DataWs.get_Range("A1:AZ" + rowCount).Value2;
         }
 
         public void Parse(BackgroundWorker backgroundWorker) {
             try {
-                SalesHistoryEntry entry = new SalesHistoryEntry();
+                sortLevelReadFunctions = new Dictionary<string, Action<object[,], long, SalesHistoryEntry>> {
+                    {"Customer",  new Action<object[,], long, SalesHistoryEntry>(GetCustomerInfo)},
+                    {"Item",  new Action<object[,], long, SalesHistoryEntry>(GetItemInfo)},
+                    {"Invoice Date",  new Action<object[,], long, SalesHistoryEntry>(GetInvoiceDateInfo)},
+                    {"Sales Location",  new Action<object[,], long, SalesHistoryEntry>(GetSalesLocationInfo)},
+                    {"Sales Rep",  new Action<object[,], long, SalesHistoryEntry>(GetSalesRepInfo)},
+                    {"Branch",  new Action<object[,], long, SalesHistoryEntry>(GetBranchInfo)},
+                    {"Contract Number",  new Action<object[,], long, SalesHistoryEntry>(GetContractNumberInfo)},
+                    {"Invoice Period",  new Action<object[,], long, SalesHistoryEntry>(GetInvoicePeriodInfo)},
+                    {"Product Group",  new Action<object[,], long, SalesHistoryEntry>(GetProductGroupInfo)},
+                    {"Ship To",  new Action<object[,], long, SalesHistoryEntry>(GetShipToInfo)},
+                    {"Supplier",  new Action<object[,], long, SalesHistoryEntry>(GetSupplierInfo)},
+                    {"Taker",  new Action<object[,], long, SalesHistoryEntry>(GetTakerInfo)},
+                };
+
+                // Get list of up to 5 'Sort Levels'
+                sortLevels = new List<string>();
+                int sortLevelCol = 8;
+
+                // Get the correct column for where the current sort level is located: 8, 14, 19, 25, 31
+                for (int curSortLevel = 0; curSortLevel < 5; curSortLevel++) {
+                    switch (curSortLevel) {
+                        case 0:
+                            sortLevelCol = 8;
+                            break;
+                        case 1:
+                            sortLevelCol = 13;
+                            break;
+                        case 2:
+                            sortLevelCol = 19;
+                            break;
+                        case 3:
+                            sortLevelCol = 25;
+                            break;
+                        case 4:
+                            sortLevelCol = 31;
+                            break;
+                    }
+
+                    string sortLevel = Convert.ToString(cellsArray[1, sortLevelCol]);
+                    if (sortLevel == null) {
+                        sortLevel = "";
+                    }
+
+                    if (sortLevel != "None")
+                        // Check if this sortLevel is in the dictionary
+                        // If not, throw an error
+                        if (!sortLevelReadFunctions.ContainsKey(sortLevel)) {
+                            throw new InvalidOperationException("New sort level found. Please send this file to Eric to fix!");
+                        }
+
+                        sortLevels.Add(sortLevel);
+                }
 
                 //Loop from top to bottom
                 //Search for an "E" or "C" in the P column, this is where an item detail is
@@ -61,29 +127,28 @@ namespace ExcelAddinP21Guillevin {
                     }
 
                     if (curRowText == "E" || curRowText == "C") {
+                        SalesHistoryEntry entry = new SalesHistoryEntry();
+
                         // If the row above contains a part number, grab it
                         // Otherwise, use the previous part number found
                         curRowText = Convert.ToString(cellsArray[curRow -1, 1]);
                         if (curRowText == null) {
                             curRowText = "";
                         }
+
                         if (!(curRowText == "")) {
                             entry.partNumber = Convert.ToString(cellsArray[curRow - 1, 1]).Trim();
                             entry.partDesc = Convert.ToString(cellsArray[curRow - 1, 3]).Trim();
                         }
+                        else {
+                            entry.partNumber = entries.Last().partNumber;
+                            entry.partDesc = entries.Last().partDesc;
+                        }
 
-                        entry.quantity = (double)cellsArray[curRow, 15];
-
-                        entry.totalCost = (double)cellsArray[curRow, 18];
-                        entry.unitCost = Math.Abs(entry.totalCost) / entry.quantity;
-
-                        entry.totalPrice = (double)cellsArray[curRow, 17];
-                        entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
-
-                        GetCustomerInfo(cellsArray, curRow, ref entry.customerName, ref entry.customerPostalCode);
-                        GetInvoiceDate(cellsArray, curRow, ref entry.invoiceDate);
-                        GetSalesLocation(cellsArray, curRow, ref entry.branchName, ref entry.branchNum);
-                        GetSalesRep(cellsArray, curRow, ref entry.salesRep);
+                        // Loop through each of the sort levels and call the associated getInfo function
+                        foreach (string sortlevel in sortLevels) {
+                            sortLevelReadFunctions[sortlevel](cellsArray, curRow, entry);
+                        }
 
                         entries.Add(entry);
                     }
@@ -95,7 +160,7 @@ namespace ExcelAddinP21Guillevin {
             }
         }
 
-        private void GetCustomerInfo(object[,] cellsArray, long curRow, ref string customerName, ref string customerPostalCode) {
+        private static void GetCustomerInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
             string inputText;
             int startIndex;
             int endIndex;
@@ -118,14 +183,29 @@ namespace ExcelAddinP21Guillevin {
             // Extract customer name
             startIndex = inputText.IndexOf('-') + 1;
             endIndex = inputText.IndexOf(',');
-            customerName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+            entry.customerName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
 
             // Extract customer postal code
             startIndex = inputText.LastIndexOf(',') + 1;
-            customerPostalCode = inputText.Substring(startIndex).Trim();
+            entry.customerPostalCode = inputText.Substring(startIndex).Trim();
+        }
+        
+        private static void GetItemInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            entry.orderNum = Convert.ToString(cellsArray[curRow, 3]);
+            entry.invoiceNum = Convert.ToString(cellsArray[curRow, 4]);
+
+            entry.quantity = (double)cellsArray[curRow, 15];
+
+            entry.totalCost = (double)cellsArray[curRow, 18];
+            entry.unitCost = Math.Abs(entry.totalCost) / entry.quantity;
+
+            entry.totalPrice = (double)cellsArray[curRow, 17];
+            entry.unitPrice = Math.Abs(entry.totalPrice) / entry.quantity;
+
+            entry.marginPercent = (double)cellsArray[curRow, 10];
         }
 
-        private void GetInvoiceDate(object[,] cellsArray, long curRow, ref string invoiceDate) {
+        private static void GetInvoiceDateInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
             string inputText;
             int startIndex;
 
@@ -146,10 +226,10 @@ namespace ExcelAddinP21Guillevin {
 
             // Extract the invoice date
             startIndex = inputText.LastIndexOf(':') + 1;
-            invoiceDate = inputText.Substring(startIndex).Trim();
+            entry.invoiceDate = inputText.Substring(startIndex).Trim();
         }
 
-        private void GetSalesLocation(object[,] cellsArray, long curRow, ref string branchName, ref string branchNum) {
+        private static void GetSalesLocationInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
             string inputText;
             int startIndex;
             int endIndex;
@@ -172,7 +252,7 @@ namespace ExcelAddinP21Guillevin {
             // Extract branch name
             // First just grab everything after the '-'
             startIndex = inputText.IndexOf('-');
-            branchName = inputText.Substring(startIndex);
+            entry.branchName = inputText.Substring(startIndex);
 
             // Then check if there are '( )' in the line, if there are update the name with what is between them
             startIndex = inputText.IndexOf('(');
@@ -180,16 +260,16 @@ namespace ExcelAddinP21Guillevin {
 
             if (startIndex != -1 && endIndex != -1 && startIndex < endIndex) {
                 startIndex++;
-                branchName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+                entry.branchName = inputText.Substring(startIndex, endIndex - startIndex).Trim();
             }
 
             // Extract branch num
             startIndex = inputText.IndexOf(':') + 1;
             endIndex = inputText.IndexOf('-');
-            branchNum = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+            entry.branchNum = inputText.Substring(startIndex, endIndex - startIndex).Trim();
         }
 
-        private void GetSalesRep(object[,] cellsArray, long curRow, ref string salesRep) {
+        private static void GetSalesRepInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
             string inputText;
             int startIndex;
 
@@ -208,9 +288,188 @@ namespace ExcelAddinP21Guillevin {
             }
             while (!(inputText.Substring(0, inputText.Length > 11 ? 11 : inputText.Length) == "SalesRep : "));
 
-            // Extract the invoice date
-            startIndex = inputText.LastIndexOf('-') + 1;
-            salesRep = inputText.Substring(startIndex).Trim();
+            // Extract the sales rep
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.salesRep = inputText.Substring(startIndex).Trim();
+        }
+
+        private static void GetBranchInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+            int endIndex;
+
+            // Loop back up until a cell is found that starts with "Branch : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 10 ? 10 : inputText.Length) == "Branch  : "));
+
+            // Extract branch name
+            // First just grab everything after the '-'
+            startIndex = inputText.IndexOf('-');
+            entry.branchName = inputText.Substring(startIndex + 1).Trim();
+
+            // Extract branch num
+            startIndex = inputText.IndexOf(':') + 1;
+            endIndex = inputText.IndexOf('-');
+            entry.branchNum = inputText.Substring(startIndex, endIndex - startIndex).Trim();
+        }
+
+        private static void GetContractNumberInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+
+            // Loop back up until a cell is found that starts with "SalesRep : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 18 ? 18 : inputText.Length) == "Contract Number : "));
+
+            // Extract the contract number
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.contractNum = inputText.Substring(startIndex).Trim();
+        }
+
+        private static void GetInvoicePeriodInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int yearStartIndex;
+            int periodStartIndex;
+
+            // Loop back up until a cell is found that starts with "Period : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 15 ? 15 : inputText.Length) == "Period : "));
+
+            // Extract the invoice period
+            // Formated "1999 - 11"
+            yearStartIndex = inputText.IndexOf("Year : ") + 7;
+            periodStartIndex = inputText.IndexOf("Period : ") + 9;
+
+            entry.invoicePeriod = inputText.Substring(yearStartIndex, 4).Trim() + " - " + inputText.Substring(periodStartIndex, 2).Trim();
+        }
+
+        private static void GetProductGroupInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+
+            // Loop back up until a cell is found that starts with "SalesRep : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 17 ? 17 : inputText.Length) == "Product Group  : "));
+
+            // Extract the contract number
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.productGroup = inputText.Substring(startIndex).Trim();
+        }
+
+        private static void GetShipToInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+
+            // Loop back up until a cell is found that starts with "SalesRep : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 9 ? 9 : inputText.Length) == "ShipTo : "));
+
+            // Extract the contract number
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.customerShipToNum = inputText.Substring(startIndex).Trim();
+        }
+
+        private static void GetSupplierInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+
+            // Loop back up until a cell is found that starts with "SalesRep : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 11 ? 11 : inputText.Length) == "Supplier : "));
+
+            // Extract the contract number
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.supplier = inputText.Substring(startIndex).Trim();
+        }
+        
+        private static void GetTakerInfo(object[,] cellsArray, long curRow, SalesHistoryEntry entry) {
+            string inputText;
+            int startIndex;
+
+            // Loop back up until a cell is found that starts with "SalesRep : "
+            do {
+                curRow--;
+
+                if (curRow == 0) {
+                    throw new InvalidOperationException("Invalid format. Rolled back to the start of the excel file.");
+                }
+
+                inputText = Convert.ToString(cellsArray[curRow, 1]);
+                if (inputText == null) {
+                    inputText = "";
+                }
+            }
+            while (!(inputText.Substring(0, inputText.Length > 8 ? 8 : inputText.Length) == "Taker : "));
+
+            // Extract the contract number
+            startIndex = inputText.LastIndexOf(':') + 1;
+            entry.taker = inputText.Substring(startIndex).Trim();
         }
 
         public void FormatWorksheet(Excel.Worksheet DataWs) {
@@ -218,55 +477,217 @@ namespace ExcelAddinP21Guillevin {
             Excel.Worksheet formattedWs = Globals.ThisAddIn.Application.ActiveWorkbook.Worksheets.Add(After: DataWs);
 
             // Put data into an array that will be copied in one go into the excel worksheet
-            object[,] OutputArray = new object[entries.Count + 1, 13];
-
-            OutputArray[0, 0] = "Branch Num";
-            OutputArray[0, 1] = "Branch Name";
-            OutputArray[0, 2] = "Sales Rep";
-            OutputArray[0, 3] = "Invoice Date";
-            OutputArray[0, 4] = "Customer";
-            OutputArray[0, 5] = "Customer Postal Code";
-            OutputArray[0, 6] = "Part Number";
-            OutputArray[0, 7] = "Part Description";
-            OutputArray[0, 8] = "Qty";
-            OutputArray[0, 9] = "Total Cost";
-            OutputArray[0, 10] = "Unit Cost";
-            OutputArray[0, 11] = "Total Price";
-            OutputArray[0, 12] = "Unit Price";
-
-            // Add each entry to a new line on the sheet
-            long curRow = 1;
+            object[,] OutputArray = new object[entries.Count + 1, 26];
+            
+            // Loop through each entry, adding it to the array to be copied to the new excel sheet
+            int index = 0;   // The index of the current entry
             foreach (SalesHistoryEntry entry in entries) {
-                OutputArray[curRow, 0] = entry.branchNum;
-                OutputArray[curRow, 1] = entry.branchName;
-                OutputArray[curRow, 2] = entry.salesRep;
-                OutputArray[curRow, 3] = entry.invoiceDate;
-                OutputArray[curRow, 4] = entry.customerName;
-                OutputArray[curRow, 5] = entry.customerPostalCode;
-                OutputArray[curRow, 6] = entry.partNumber;
-                OutputArray[curRow, 7] = entry.partDesc;
-                OutputArray[curRow, 8] = entry.quantity;
-                OutputArray[curRow, 9] = entry.totalCost;
-                OutputArray[curRow, 10] = entry.unitCost;
-                OutputArray[curRow, 11] = entry.totalPrice;
-                OutputArray[curRow, 12] = entry.unitPrice;
+                int curCol = 0;
 
-                curRow++;
+                if (sortLevels.Contains("Sales Location")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Branch Num";
+                    }
+                    
+                    OutputArray[index + 1, curCol] = entry.branchNum;
+                    curCol++;
+
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Branch Name";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.branchName;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Branch")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Branch Num";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.branchNum;
+                    curCol++;
+
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Branch Name";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.branchName;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Sales Rep")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Sales Rep";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.salesRep;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Invoice Date")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Invoice Date";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.invoiceDate;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Customer")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Customer";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.customerName;
+                    curCol++;
+
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Customer Postal Code";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.customerPostalCode;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Contract Number")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Contract Number";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.contractNum;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Invoice Period")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Invoice Period";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.invoicePeriod;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Product Group")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Product Group";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.productGroup;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Ship To")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Ship To";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.customerShipToNum;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Supplier")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Supplier";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.supplier;
+                    curCol++;
+                }
+
+                if (sortLevels.Contains("Taker")) {
+                    if (index == 0) {
+                        OutputArray[0, curCol] = "Taker";
+                    }
+
+                    OutputArray[index + 1, curCol] = entry.taker;
+                    curCol++;
+                }
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Order Num";
+                }
+
+                OutputArray[index + 1, curCol] = entry.orderNum;
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Invoice Num";
+                }
+
+                OutputArray[index + 1, curCol] = entry.invoiceNum;
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Part Number";
+                }
+
+                OutputArray[index + 1, curCol] = entry.partNumber;
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Part Description";
+                }
+
+                OutputArray[index + 1, curCol] = entry.partDesc;
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Qty";
+                }
+
+                OutputArray[index + 1, curCol] = entry.quantity;
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Total Cost";
+                }
+
+                OutputArray[index + 1, curCol] = "$" + entry.totalCost.ToString("0.00");
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Unit Cost";
+                }
+
+                OutputArray[index + 1, curCol] = "$" + entry.unitCost.ToString("0.00");
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Total Price";
+                }
+
+                OutputArray[index + 1, curCol] = "$" + entry.totalPrice.ToString("0.00");
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Unit Price";
+                }
+
+                OutputArray[index + 1, curCol] = "$" + entry.unitPrice.ToString("0.00");
+                curCol++;
+
+                if (index == 0) {
+                    OutputArray[0, curCol] = "Margin";
+                }
+                OutputArray[index + 1, curCol] = entry.marginPercent.ToString("0.0");
+
+                index++;
             }
 
             // Copy the array contents onto the newly created worksheet
             formattedWs.Select();
-            formattedWs.Range["A1", formattedWs.Cells[entries.Count, 13]] = OutputArray;
+            formattedWs.Range["A1", formattedWs.Cells[entries.Count, 26]] = OutputArray;
 
             // Bold the headers
-            formattedWs.Range["A1:M1"].Font.Bold = true;
+            formattedWs.Range["A1:Z1"].Font.Bold = true;
 
             // Freeze the top row
             formattedWs.Application.ActiveWindow.SplitRow = 1;
             formattedWs.Application.ActiveWindow.FreezePanes = true;
 
             // Format the currency cells
-            formattedWs.Range["J2", formattedWs.Cells[entries.Count, 13]].Numberformat = "$0.00";
+            //formattedWs.Range["J2", formattedWs.Cells[entries.Count, 30]].Numberformat = "$0.00";
 
             // Resize columns
             formattedWs.UsedRange.Columns.AutoFit();

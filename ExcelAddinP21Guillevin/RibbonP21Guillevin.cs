@@ -38,6 +38,16 @@ namespace ExcelAddinP21Guillevin {
                 return;
             }
 
+            // Check if at least one of the sort levels is "Item"
+            if (Globals.ThisAddIn.Application.ActiveSheet.Cells[1, 8].Value2 != "Item" &&
+                Globals.ThisAddIn.Application.ActiveSheet.Cells[1, 13].Value2 != "Item" &&
+                Globals.ThisAddIn.Application.ActiveSheet.Cells[1, 19].Value2 != "Item" &&
+                Globals.ThisAddIn.Application.ActiveSheet.Cells[1, 25].Value2 != "Item" &&
+                Globals.ThisAddIn.Application.ActiveSheet.Cells[1, 31].Value2 != "Item") {
+                    MessageBox.Show("At least one of the sort levels must be 'Item'.");
+                    return;
+            }
+            
             frmLoadingForm = new LoadingForm();
 
             System.Threading.SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
