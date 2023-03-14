@@ -102,7 +102,7 @@ namespace ExcelAddinP21Guillevin {
                         sortLevel = "";
                     }
 
-                    if (sortLevel != "None")
+                    if (sortLevel != "None") {
                         // Check if this sortLevel is in the dictionary
                         // If not, throw an error
                         if (!sortLevelReadFunctions.ContainsKey(sortLevel)) {
@@ -110,6 +110,7 @@ namespace ExcelAddinP21Guillevin {
                         }
 
                         sortLevels.Add(sortLevel);
+                    }
                 }
 
                 //Loop from top to bottom
