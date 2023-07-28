@@ -678,7 +678,7 @@ namespace ExcelAddinP21Guillevin {
 
             // Copy the array contents onto the newly created worksheet
             formattedWs.Select();
-            formattedWs.Range["A1", formattedWs.Cells[entries.Count, 26]] = OutputArray;
+            formattedWs.Range["A1", formattedWs.Cells[entries.Count + 1, 26]] = OutputArray;
 
             // Bold the headers
             formattedWs.Range["A1:Z1"].Font.Bold = true;
