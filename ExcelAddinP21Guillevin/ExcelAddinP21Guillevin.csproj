@@ -33,7 +33,7 @@
     <PublishUrl>C:\Users\eric-\source\repos\ExcelAddinP21Guillevin\Published\</PublishUrl>
     <InstallUrl>https://github.com/EricPalmer/ExcelAddinP21Guillevin/raw/master/Published/</InstallUrl>
     <TargetCulture>en</TargetCulture>
-    <ApplicationVersion>1.0.1.14</ApplicationVersion>
+    <ApplicationVersion>1.0.1.17</ApplicationVersion>
     <AutoIncrementApplicationRevision>true</AutoIncrementApplicationRevision>
     <UpdateEnabled>true</UpdateEnabled>
     <UpdateInterval>0</UpdateInterval>
@@ -215,6 +215,7 @@
     <EmbeddedResource Include="ActionPaneHelp.resx">
       <DependentUpon>ActionPaneHelp.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="ExcelAddinP21Guillevin_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -251,7 +252,7 @@
     <ManifestKeyFile>ExcelAddinP21Guillevin_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>345346B3944B82D05DC48A376B98AD04D78B9589</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>398D3B5A8442A401FCFFC622F06098FF64222130</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
